@@ -25,22 +25,36 @@
     </a-scene>
 
     <script>
-      // Lógica para lanzar la bola
+      // Referencias a la bola y pinos
       const bola = document.querySelector('#bola');
+      const pinos = ['#pino1', '#pino2', '#pino3', '#pino4', '#pino5'];
       let velocidad = new THREE.Vector3(0, 0, 0);
       let lanzado = false;
+      let toqueInicial = new THREE.Vector2(0, 0);
+      let direccion = new THREE.Vector3(0, 0, 0);
 
-      // Función para lanzar la bola al hacer clic
-      window.addEventListener('click', () => {
-        if (!lanzado) {
-          velocidad.set(0, 0, -0.3); // Lanzar hacia adelante
-          lanzado = true;
-        }
+      // Capturar el toque de la pantalla
+      window.addEventListener('touchstart', function (event) {
+        // Obtener la posición inicial del toque
+        toqueInicial.set(event.touches[0].clientX, event.touches[0].clientY);
       });
 
-      // Función para chequear si la bola ha tocado los pinos
+      window.addEventListener('touchend', function (event) {
+        // Calcular la diferencia de posición entre el toque inicial y final
+        let toqueFinal = new THREE.Vector2(event.changedTouches[0].clientX, event.changedTouches[0].clientY);
+        let diferencia = toqueFinal.clone().sub(toqueInicial);
+
+        // Calcular la dirección y fuerza basados en la diferencia
+        let fuerza = diferencia.length() * 0.005; // Escala de fuerza
+        direccion.set(diferencia.x, 0, -diferencia.y).normalize(); // Dirección en X y Z (sin Y)
+
+        // Aplicar la velocidad
+        velocidad = direccion.multiplyScalar(fuerza);
+        lanzado = true;
+      });
+
+      // Función para verificar colisiones con los pinos
       function verificarColision() {
-        const pinos = ['#pino1', '#pino2', '#pino3', '#pino4', '#pino5'];
         pinos.forEach(id => {
           const pino = document.querySelector(id);
           const distancia = bola.object3D.position.distanceTo(pino.object3D.position);
@@ -52,7 +66,7 @@
         });
       }
 
-      // Lógica para actualizar la posición de la bola
+      // Función para actualizar la posición de la bola
       function actualizar() {
         if (lanzado) {
           bola.object3D.position.add(velocidad);
@@ -69,12 +83,8 @@
       }
 
       // Llamar a la función actualizar en cada frame
-      document.querySelector('a-scene').addEventListener('renderstart', function () {
-        this.setAttribute('animation', 'property: position; to: 0 0 -1; dur: 1000');
-      });
-
-      // Ciclo de animación
       setInterval(actualizar, 1000 / 60);
     </script>
   </body>
 </html>
+
